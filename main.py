@@ -4,16 +4,13 @@ from google.oauth2 import service_account
 from PIL import Image
 import streamlit_authenticator as stauth
 import io
-import base64
-import streamlit as st
-from PIL import Image
-import streamlit_authenticator as stauth
 
 st.set_page_config(page_title="SGI Viewer", page_icon="📁", layout="wide")
 
 # ----- LOGIN (da secrets) -----
 auth_cfg = st.secrets["auth"]
 
+# secrets è read-only. lo copiamo
 credentials = {"usernames": {}}
 for uname, data in auth_cfg["credentials"]["usernames"].items():
     credentials["usernames"][uname] = dict(data)
@@ -25,7 +22,6 @@ authenticator = stauth.Authenticate(
     auth_cfg["cookie_expiry_days"],
 )
 
-# qui facciamo compatibilità nuova/vecchia versione
 login_fields = {
     "Form name": "Login",
     "Username": "Username",
@@ -33,23 +29,18 @@ login_fields = {
     "Login": "Accedi",
 }
 
+# una sola chiamata. prima provo con la firma nuova, se no uso la vecchia
 try:
-    # versioni nuove (quelle che hai in locale)
     name, auth_status, username = authenticator.login(
         fields=login_fields,
         location="main",
     )
 except TypeError:
-    # versioni vecchie (quelle che il cloud ti ha installato)
+    # firma vecchia
     name, auth_status, username = authenticator.login(
         "Login",
         "main",
     )
-
-name, auth_status, username = authenticator.login(
-    fields=login_fields,
-    location="main",
-)
 
 if auth_status is False:
     st.error("Credenziali non corrette.")
@@ -97,7 +88,6 @@ else:
         res = drive_service.files().list(
             q=q,
             pageSize=200,
-            # prendiamo anche i link di anteprima
             fields="files(id, name, mimeType, webViewLink, webContentLink)",
         ).execute()
         return res.get("files", [])
@@ -117,21 +107,8 @@ else:
         return items[0]["id"] if items else None
 
     def show_drive_preview(file_id: str, height: int = 700):
-        # usiamo direttamente il viewer di Google Drive, niente download
         iframe = f'<iframe src="https://drive.google.com/file/d/{file_id}/preview" width="100%" height="{height}" allow="autoplay"></iframe>'
         st.markdown(iframe, unsafe_allow_html=True)
-
-    def download_image_bytes(file_id: str):
-        # per le immagini le scarichiamo perché sono leggere
-        req = drive_service.files().get_media(fileId=file_id)
-        buf = io.BytesIO()
-        for chunk in req.execute(num_retries=3),:
-            # ma get_media().execute() restituisce tutto insieme
-            pass
-        # in realtà è più semplice:
-        buf = io.BytesIO(req.execute())
-        buf.seek(0)
-        return buf.read()
 
     # ---------- SEZIONI ----------
     if sezione == "Documenti di vertice":
@@ -253,11 +230,8 @@ else:
         webview = selected_item.get("webViewLink")
         webcontent = selected_item.get("webContentLink")
 
-        # bottone per aprire anteprima (non scarichiamo noi)
         if st.button("Apri anteprima", key="preview_btn"):
-            # immagini → le scarichiamo
             if mime.startswith("image/"):
-                # questa è l’unica parte che scarica
                 req = drive_service.files().get_media(fileId=file_id)
                 img_bytes = io.BytesIO(req.execute())
                 st.image(img_bytes, use_container_width=True)

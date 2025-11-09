@@ -57,9 +57,18 @@ st.sidebar.markdown("---")
 # SCELTA CLIENTE
 # =========================
 folders_cfg = st.secrets["folders"]
-clienti = list(folders_cfg.keys())
-cliente_scelto = st.sidebar.selectbox("Cliente", clienti)
-ROOT_FOLDER_ID = folders_cfg[cliente_scelto]
+user_folders = st.secrets.get("user_folders", {})
+
+username = st.session_state.username
+
+if username in user_folders:
+    cliente_scelto = user_folders[username]
+    ROOT_FOLDER_ID = folders_cfg[cliente_scelto]
+    st.sidebar.markdown(f"📁 Cliente: **{cliente_scelto}**")
+else:
+    clienti = list(folders_cfg.keys())
+    cliente_scelto = st.sidebar.selectbox("Cliente", clienti)
+    ROOT_FOLDER_ID = folders_cfg[cliente_scelto]
 
 # =========================
 # GOOGLE DRIVE

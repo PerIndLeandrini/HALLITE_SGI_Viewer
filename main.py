@@ -96,8 +96,11 @@ sezione = st.sidebar.radio(
     "Sezione",
     [
         "Documenti di vertice",
-        "Procedure operative",
-        "Moduli procedure",
+        "DVR",
+        "Procedure",
+        "Moduli",
+        "Audit",
+        "Risk Managment",
         "Altre cartelle",
     ],
 )
@@ -152,11 +155,26 @@ if sezione == "Documenti di vertice":
     ).execute()
     files = res.get("files", [])
 
-elif sezione == "Procedure operative":
-    st.subheader(f"Procedure operative . {cliente_scelto}")
-    proc_id = find_subfolder_id(ROOT_FOLDER_ID, "PROCEDURE OPERATIVE")
+elif sezione == "DVR":
+    st.subheader(f"DVR . {cliente_scelto}")
+    dvr_id = find_subfolder_id(ROOT_FOLDER_ID, "DVR")
+    if not dvr_id:
+        st.error("Cartella 'DVR' non trovata.")
+        files = []
+    else:
+        files = [
+            f
+            for f in list_files_in_folder(dvr_id)
+            if f["mimeType"] != "application/vnd.google-apps.folder"
+        ]
+        if search:
+            files = [f for f in files if search.lower() in f["name"].lower()]
+
+elif sezione == "Procedure":
+    st.subheader(f"Procedure . {cliente_scelto}")
+    proc_id = find_subfolder_id(ROOT_FOLDER_ID, "Procedure")
     if not proc_id:
-        st.error("Cartella 'PROCEDURE OPERATIVE' non trovata.")
+        st.error("Cartella 'Procedure' non trovata.")
         files = []
     else:
         files = [
@@ -167,16 +185,16 @@ elif sezione == "Procedure operative":
         if search:
             files = [f for f in files if search.lower() in f["name"].lower()]
 
-elif sezione == "Moduli procedure":
+elif sezione == "Moduli":
     st.subheader(f"Moduli delle procedure . {cliente_scelto}")
-    proc_id = find_subfolder_id(ROOT_FOLDER_ID, "PROCEDURE OPERATIVE")
+    proc_id = find_subfolder_id(ROOT_FOLDER_ID, "Procedure")
     if not proc_id:
-        st.error("Cartella 'PROCEDURE OPERATIVE' non trovata.")
+        st.error("Cartella 'Procedure' non trovata.")
         files = []
     else:
-        mod_id = find_subfolder_id(proc_id, "MOD")
+        mod_id = find_subfolder_id(proc_id, "Moduli")
         if not mod_id:
-            st.error("Cartella 'MOD' non trovata dentro 'PROCEDURE OPERATIVE'.")
+            st.error("Cartella 'Moduli' non trovata dentro 'Procedure'.")
             files = []
         else:
             files = [
@@ -187,13 +205,51 @@ elif sezione == "Moduli procedure":
             if search:
                 files = [f for f in files if search.lower() in f["name"].lower()]
 
+elif sezione == "Audit":
+    st.subheader(f"Audit . {cliente_scelto}")
+    audit_id = find_subfolder_id(ROOT_FOLDER_ID, "Audit")
+    if not audit_id:
+        st.error("Cartella 'Audit' non trovata.")
+        files = []
+    else:
+        files = [
+            f
+            for f in list_files_in_folder(audit_id)
+            if f["mimeType"] != "application/vnd.google-apps.folder"
+        ]
+        if search:
+            files = [f for f in files if search.lower() in f["name"].lower()]
+
+elif sezione == "Risk Managment":
+    st.subheader(f"Risk Managment . {cliente_scelto}")
+    risk_id = find_subfolder_id(ROOT_FOLDER_ID, "Risk Managment")
+    if not risk_id:
+        st.error("Cartella 'Risk Managment' non trovata.")
+        files = []
+    else:
+        files = [
+            f
+            for f in list_files_in_folder(risk_id)
+            if f["mimeType"] != "application/vnd.google-apps.folder"
+        ]
+        if search:
+            files = [f for f in files if search.lower() in f["name"].lower()]
+
 else:
     st.subheader(f"Altre cartelle . {cliente_scelto}")
     root_items = list_files_in_folder(ROOT_FOLDER_ID)
     root_folders = [
         i for i in root_items if i["mimeType"] == "application/vnd.google-apps.folder"
     ]
-    esclusi = {"PROCEDURE OPERATIVE", "MOD"}
+    # escludo quelle già gestite sopra
+    esclusi = {
+        "Documenti di vertice",
+        "DVR",
+        "Procedure",
+        "Moduli",
+        "Audit",
+        "Risk Managment",
+    }
     root_folders = [f for f in root_folders if f["name"] not in esclusi]
 
     if not root_folders:

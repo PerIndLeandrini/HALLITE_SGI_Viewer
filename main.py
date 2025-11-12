@@ -299,7 +299,7 @@ else:
 # ANTEPRIMA
 # =========================
 if not files:
-    st.info("Nessun documento trovato.")
+    st.info("Attenzione!! Potresti non avere le autorizzazioni per visualizzare questi documenti - Contattare la Direzione")
 else:
     names = [f["name"] for f in files]
     selected_name = st.selectbox("Seleziona un documento", names)
